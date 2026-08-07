@@ -110,7 +110,7 @@ This project was scaffolded and iterated on inside **Lovable**, which generated 
 
 | Layer | Technology |
 |---|---|
-| **Framework** | [TanStack Start](https://tanstack.com/start) (`@tanstack/react-start`) on **React 19** |
+| **Framework** | (`@tanstack/react-start`) on **React 19** |
 | **Data fetching / cache** | `@tanstack/react-query` |
 | **Styling** | Tailwind CSS v4 (`@tailwindcss/vite`, `tw-animate-css`, `tailwind-merge`) |
 | **Live Agent Graph** | `@xyflow/react` (React Flow) |
