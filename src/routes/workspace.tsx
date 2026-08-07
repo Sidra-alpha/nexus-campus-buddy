@@ -160,7 +160,13 @@ function Workspace() {
         { event: "INSERT", schema: "public", table: "chat_messages", filter: `session_id=eq.${sessionId}` },
         (payload) => {
           const row = payload.new as unknown as ChatMessage;
-          setMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === row.id)) return prev;
+            const withoutOptimistic = prev.filter(
+              (m) => !(m.id.startsWith("optimistic-") && m.content === row.content),
+            );
+            return [...withoutOptimistic, row];
+          });
           if (row.proactive) {
             toast("NEXUS noticed something", {
               description: row.content.replace(/\*\*/g, "").slice(0, 120),
@@ -248,6 +254,19 @@ function Workspace() {
     async (text: string) => {
       if (!sessionId || !studentId) return;
       setRunning(true);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `optimistic-${Date.now()}`,
+          session_id: sessionId,
+          role: "user",
+          agent: null,
+          content: text,
+          citations: [],
+          proactive: false,
+          created_at: new Date().toISOString(),
+        },
+      ]);
       try {
         const res = await runOrchestrator({
           data: { sessionId, studentId, message: text, language },
