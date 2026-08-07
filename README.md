@@ -1,164 +1,166 @@
-# Nexus Campus AI
+# NEXUS — Autonomous Smart Campus Multi-Agent AI
 
-go throught the file which i am attaching and th prompt carefully. execute what ever is in the there.                  Build "NEXUS" — an Autonomous Smart Campus Multi-Agent AI System. This is NOT a chatbot. It is a multi-agent orchestration platform where specialized AI agents plan, collaborate, and take real actions on behalf of the user (register for events, send emails, update calendars) — always behind a human approval step. The UI must make the multi-agent collaboration visually obvious, not just show a chat log.
+**NEXUS is not a chatbot.** It's a multi-agent orchestration platform where specialized AI agents plan, collaborate, and take real actions on a student's behalf — registering for events, sending emails, updating calendars — with a human approval step before anything irreversible happens.
 
-Core Concept
+🔗 **Live app:**(https://nexus-campus-buddy.lovable.app)
 
-A student types a natural-language request (e.g. "Am I eligible for the Google internship? If yes, register me for tomorrow's placement workshop, add it to my calendar, and remind me an hour before"). An Orchestrator Agent breaks this into a plan, delegates steps to specialized agents, shows its reasoning live, and pauses for user approval before any irreversible action.
+---
 
-Pages / Screens
+## Problem Statement
 
-1. Landing/Login — clean, modern, dark-mode-first dashboard aesthetic (not a generic SaaS template — use a distinctive color accent, not default purple/blue gradients). Simple mock auth (student picks/creates a profile).
+Campus life generates a constant stream of small, fragmented administrative tasks — checking placement eligibility, tracking attendance thresholds, registering for events, staying on top of policy deadlines, following upcoming hackathons, internships and workshops. Today a student has to:
 
-2. Main Workspace (core screen) — split layout:
+- Manually check multiple disconnected systems (attendance portals, placement cells, event pages, policy PDFs) to answer one question.
+- Do their own multi-step reasoning (e.g. "am I eligible?" requires checking CGPA, branch, *and* backlog rules against a specific drive).
+- Remember deadlines and thresholds themselves — nothing proactively tells them attendance has dropped below the cutoff until it's too late.
+- Re-explain their context every single time, because existing "campus chatbots" are stateless Q&A tools with no memory and no ability to actually *act* — they can only tell a student what to do, not do it.
+- Give them a proper roadmap and resources throughout their learning and answer their queries without feeling being judged.
 
-   - Left: Chat panel (streaming responses, markdown support, multilingual toggle for English/Hindi/Telugu)
+The result is missed opportunities (an eligible student who never registers in time), avoidable academic risk (attendance drops unnoticed), and wasted time spent stitching together answers from five different places.
 
-   - Right: "Live Agent Graph" panel — an animated node graph (use React Flow) showing: User → Orchestrator → [Academic Agent / Placement Agent / Knowledge Agent / Communication Agent] → Tools. Nodes should visually light up / pulse in sequence as each agent activates during a request, with the current step's status (pending/active/done) shown on the node.
+---
 
-   - Below the graph: a collapsible "Reasoning Trace" panel showing the orchestrator's plan in plain English as numbered steps before/while it executes (e.g. "1. Check eligibility → 2. Retrieve placement policy → 3. Register for event → 4. Schedule reminder").
+## Solution
 
-3. Approval Modal — whenever an agent wants to perform a write action (send email, register for event, add calendar entry), interrupt the flow and show a modal with the exact action details and a Confirm/Deny choice. Nothing irreversible happens without this.
+**NEXUS** is an autonomous multi-agent system that treats a student's request as a *task to be executed*, not a question to be answered. A single natural-language message —
 
-4. Proactive Alerts — a toast/notification system where the "Sentinel Agent" can push unprompted messages into the chat (e.g. "Your attendance in DBMS just dropped below 75% — want me to draft an email to your faculty advisor?"), clearly styled differently from user-triggered responses so it's obvious the system initiated it, not the user.
+> "Am I eligible for the Google internship? If yes, register me for tomorrow's placement workshop, add it to my calendar, and remind me an hour before."
 
-5. Student Profile / Memory panel — shows what the system remembers about the student (past requests, preferences, attendance %, CGPA) — demonstrates long-term agent memory.
+— is decomposed by an **Orchestrator Agent** into an explicit plan, delegated across specialist agents (academic records, placement eligibility, policy knowledge, communication/actions), executed with full visible reasoning, and gated by **human approval** before anything irreversible is written (an email sent, a registration submitted, a calendar event created).
 
-6. Admin/Debug view (optional tab) — raw log of agent-to-agent messages (sender, receiver, intent, payload) for demo/judging transparency.
+On top of that, a **Sentinel Agent** runs in the background and proactively reaches out — e.g. flagging low attendance before the student even asks — turning NEXUS from a reactive tool into a system that looks out for the student.
 
-Data Model (Supabase Postgres)
+The interface is built so this multi-agent collaboration is *visible*: a live animated agent graph, a plain-English reasoning trace, and an unmissable approval modal, so a judge (or a student) understands what's happening within seconds — not just a chat log with a good answer at the end.
 
-- `students`: id, name, branch, year, cgpa, attendance_pct
+---
 
-- `courses`: id, name, faculty, timetable_slot, student_id (fk)
+## Core Features
 
-- `placements`: id, company, eligibility_rules (jsonb: min_cgpa, branch, max_backlogs), open_roles
+- **Natural-language task execution** — one message can trigger a multi-step plan spanning eligibility checks, registrations, calendar updates, and reminders.
+- **Live Agent Graph** — an animated node graph (User → Orchestrator → specialist agent(s) → Tool/DB) built with React Flow, with nodes pulsing/lighting up in real time as each agent activates.
+- **Reasoning Trace panel** — the orchestrator's plan shown as numbered, plain-English steps ("1. Check eligibility → 2. Retrieve placement policy → 3. Register for event → 4. Schedule reminder"), collapsible once complete.
+- **Human-in-the-loop approval gate** — any write action (email, registration, calendar entry) pauses execution and shows an approval modal with the exact action, the reasoning behind it, and an unambiguous Approve/Deny choice.
+- **Sentinel Agent / proactive alerts** — scheduled background checks (e.g. attendance < 75%) push unprompted, visually distinct messages into the chat.
+- **Multilingual chat** — English / Hindi / Telugu toggle, streaming markdown responses.
+- **Cited policy answers (RAG)** — the Knowledge Agent answers policy questions with an expandable "Source: Attendance Policy §2" citation instead of a wall of text.
+- **Long-term memory** — a Student Profile / Memory panel showing attendance %, CGPA, deadlines, and facts NEXUS has learned about the student across sessions.
+- **Admin/Debug view** — raw agent-to-agent message log (sender, receiver, intent, payload) for full transparency into what the system actually did.
+- **Graceful degradation** — if an agent or tool fails, the UI shows a clear fallback message instead of breaking or failing silently.
 
-- `events`: id, title, date, capacity, registered_students (array)
+---
 
-- `policies`: id, title, content (source text for RAG — attendance policy, exam regs, hostel rules, scholarships — write 4-5 realistic sample docs)
+## System Architecture
 
-- `chat_sessions`, `chat_messages`: standard chat history per student
-
-- `agent_logs`: session_id, sender_agent, receiver_agent, intent, payload (jsonb), timestamp — powers the live graph and debug view
-
-- `pending_approvals`: session_id, action_type, action_payload, status (pending/approved/denied)
-
-Agent Logic (implement via Supabase Edge Functions calling an LLM API)
-
-- Orchestrator: takes the user message + student context, calls the LLM to produce a JSON plan (ordered list of {agent, action, params}), writes each step to `agent_logs` as it executes so the frontend graph updates in real time via Supabase Realtime subscriptions.
-
-- Academic Agent: reads `courses`/`students` tables, answers timetable/attendance/exam questions.
-
-- Placement Agent: checks `placements.eligibility_rules` against the student row, does multi-step reasoning (cgpa check → branch check → backlog check) and explains which rule passed/failed.
-
-- Knowledge Agent (RAG): does a simple similarity/keyword search over the `policies` table content and answers policy questions with the source cited.
-
-- Communication & Action Agent: drafts email/registration/calendar actions but writes to `pending_approvals` instead of executing directly — only proceeds after the frontend approval modal resolves it to "approved".
-
-- Sentinel Agent: a scheduled edge function (cron) that scans `students`/`courses` for threshold breaches (e.g. attendance < 75%) and inserts a proactive message into `chat_messages` for that student, which the frontend picks up via Realtime and shows as a toast.
-
-Design Direction
-
-Distinctive, not templated — dark background, one confident accent color, clean sans-serif typography, generous whitespace. The Live Agent Graph should feel like a "mission control" element, not a decorative diagram. Streaming chat bubbles, smooth transitions on graph node state changes, and a genuinely different visual treatment for "user-triggered" vs "agent-initiated" (Sentinel) messages.
-
-Seed Data
-
-Seed with 3-4 mock students, 5-6 courses, 2-3 placement drives with different eligibility rules, 3-4 upcoming events, and 4 short policy documents (attendance policy, exam regulations, hostel rules, scholarship guidelines).
-
-Build this as a fully working prototype with real Supabase-backed data and real LLM calls (not hardcoded fake responses) so the multi-agent planning and tool-calling are genuinely functional, not scripted.           ## Frontend Requirements — Interface must be clear, understandable, and top-notch
-
-The interface's job is to make invisible AI reasoning visible. A judge should understand what the system is doing within 5 seconds of watching it, without anyone explaining it verbally.
-
-Layout & Hierarchy
-
-- Three-zone workspace layout: Chat (left, ~40%), Live Agent Graph (right-top, ~35%), Reasoning Trace + Approvals (right-bottom, ~25%). No zone should require scrolling to understand what's happening right now.
-
-- Persistent top bar: student name/avatar, current session status ("Idle" / "Planning..." / "Executing step 2 of 4" / "Awaiting your approval"), language toggle, memory/profile icon.
-
-- Every screen should have ONE clear focal point at a time — when an approval is pending, dim/blur the rest of the UI so the modal is unmissable. When idle, the chat input is the focal point.
-
-Chat Panel
-
-- Clear visual distinction between three message types (not just user vs assistant):
-
-  1. User messages — right-aligned, accent color
-
-  2. Agent responses — left-aligned, neutral, with a small labeled tag showing WHICH agent answered (e.g. "Placement Agent" badge with a distinct icon/color per agent)
-
-  3. Proactive/Sentinel messages — visually separate treatment entirely (e.g. a left border accent, a small " NEXUS noticed something" label) so it's immediately obvious the AI initiated this, not the user
-
-- Streaming text (token-by-token), with a subtle typing indicator that shows which agent is "thinking" before the graph even updates
-
-- Inline citations when the Knowledge Agent answers from a policy doc — a small expandable "Source: Attendance Policy §2" chip, not a wall of text
-
-- Message timestamps, but understated (small, muted gray) — don't clutter
-
-Live Agent Graph
-
-- This is the signature feature — it must read instantly, not require a legend
-
-- Nodes: User → Orchestrator → active specialist agent(s) → Tool/DB icon. Use simple, distinct icons per agent (not generic robot icons — e.g. a book for Knowledge, a briefcase for Placement, a calendar for Communication)
-
-- States communicated purely visually: gray/dim = idle, pulsing accent color = currently active, solid checkmark = completed, red = error/fallback triggered
-
-- Edges animate (a moving dot or dash-flow) while data is being passed between two active nodes, so "collaboration" is literally visible motion, not static lines
-
-- Keep it to max 6-7 nodes visible at once — if it gets busy/cluttered, it stops being "clear and understandable" and becomes noise
-
-Reasoning Trace Panel
-
-- Numbered plan steps, each with a status icon (○ pending, ◐ in progress, ✓ done, ✕ failed/fallback)
-
-- Plain-English step descriptions, not technical/JSON — e.g. "Checking CGPA and backlog eligibility" not "invoke placement_agent.check_eligibility()"
-
-- Collapsible by default after a request completes, so it doesn't clutter the interface once the answer is delivered — expandable on click for anyone (a judge) who wants to inspect it
-
-Approval Modal
-
-- Cannot be missed or misread: shows the exact action in plain language ("Register you for: AI/ML Workshop — Tomorrow, 10 AM"), the agent proposing it, and two unambiguous buttons (Approve / Deny) — no fine print, no ambiguity about what happens on each choice
-
-- A short "why" line under the action ("Recommended because you're eligible and it's before your exam deadline")
-
-- After a decision, show brief confirmation feedback inline (not just closing the modal silently) so the user/judge has closure on that action
-
-Memory / Profile Panel
-
-- Simple, scannable card layout — attendance %, CGPA, upcoming deadlines, and a short "NEXUS remembers" list (2-3 bullet facts it has learned about this student's preferences from past sessions)
-
-- This should feel like evidence of persistence across sessions, not a settings page
-
-Accessibility & Polish (judges notice these even if they don't say so)
-
-- Consistent spacing scale, one accent color used purposefully (not scattered across every element), readable contrast in dark mode
-
-- Empty/loading states designed on purpose — no blank white flash, no unstyled "Loading..." text
-
-- Graceful error/fallback UI — if an agent or tool fails, show a clear, calm message ("Placement Agent couldn't reach the eligibility database — showing cached data from this morning") instead of a broken UI or silent failure, since "error handling and graceful fallback" is explicitly graded
-
-- Fully responsive down to tablet width at minimum, since evaluators may view this on a laptop screen shared over a call
-
-- Subtle micro-interactions only where they add clarity (button press feedback, modal transitions) — avoid decorative animation that adds no information
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://nexus-campus-buddy.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/684f8585-e7fa-40bc-b5dc-2c10b14d7b3f).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
 ```
+                       ┌─────────────────────┐
+                       │       Student       │
+                       │  (Chat / Web UI)    │
+                       └──────────┬───────────┘
+                                  │ natural-language request
+                                  ▼
+                       ┌─────────────────────┐
+                       │  Orchestrator Agent   │
+                       │  - parses request     │
+                       │  - builds JSON plan   │
+                       │  - delegates steps    │
+                       │  - logs to agent_logs │
+                       └──────────┬───────────┘
+              ┌───────────────────┼───────────────────┬─────────────────────┐
+              ▼                   ▼                    ▼                     ▼
+     ┌─────────────────┐ ┌─────────────────┐     ┌────────────────────┐     ┌──────────────────────┐
+     │ Academic Agent    │ │ Placement Agent  │  │ Knowledge Agent (RAG)│   │ Communication & Action │
+     │ timetable/         │ │ cgpa → branch →  │ │ policy search +      │   │ Agent                  │
+     │ attendance/exams   │ │ backlog checks   │ │ cited answers        │   │ drafts email/registr./ │
+     └────────┬──────────┘ └────────┬─────────┘  └──────────┬────────────┘  │ calendar → pending_    │
+              │                     │                       │               │ approvals              │
+              ▼                     ▼                       ▼               └───────────┬─────────────┘
+     ┌─────────────────────────────────────────────────────────────┐                    │
+     │              Supabase Postgres (students, courses,            │◄────────────────┘
+     │        placements, events, policies, agent_logs, ...)          │
+     └─────────────────────────────────────────────────────────────┘
+                                  ▲
+                                  │ writes pending action
+                                  ▼
+                       ┌─────────────────────┐        approve/deny        ┌───────────────┐
+                       │  pending_approvals    │ ──────────────────────►  │ Approval Modal │
+                       │  (status: pending)    │ ◄──────────────────────  │ (Student UI)   │
+                       └─────────────────────┘                            └───────────────┘
+
+     ┌───────────────────────────────────────────────────────────────┐
+     │  Sentinel Agent (scheduled Supabase Edge Function / cron)        │
+     │  scans students/courses for threshold breaches (e.g. attendance  │
+     │  < 75%) → inserts proactive message into chat_messages           │
+     │  → picked up via Supabase Realtime → shown as a toast            │
+     └───────────────────────────────────────────────────────────────┘
+```
+
+**How it flows end to end:**
+1. Student sends a message via the Chat panel.
+2. The **Orchestrator** (a Supabase Edge Function calling an LLM) turns it into an ordered plan and writes each step to `agent_logs`.
+3. The frontend subscribes to `agent_logs` via **Supabase Realtime**, animating the Live Agent Graph and Reasoning Trace as steps execute.
+4. Read-only agents (Academic, Placement, Knowledge) query Postgres directly and respond.
+5. The **Communication & Action Agent** never executes a write directly — it inserts a row into `pending_approvals`, which blocks until the student approves or denies it via the modal.
+6. The **Sentinel Agent** runs independently on a schedule, watching for threshold breaches and proactively inserting messages that surface as toasts.
+
+---
+
+## Technologies Used
+
+This project was scaffolded and iterated on inside **Lovable**, which generated a TanStack Start + Supabase codebase (agent logic runs as Supabase Edge Functions calling an LLM API — there is no separate Python backend).
+
+| Layer | Technology |
+|---|---|
+| **Framework** | [TanStack Start](https://tanstack.com/start) (`@tanstack/react-start`) on **React 19** |
+| **Data fetching / cache** | `@tanstack/react-query` |
+| **Styling** | Tailwind CSS v4 (`@tailwindcss/vite`, `tw-animate-css`, `tailwind-merge`) |
+| **Live Agent Graph** | `@xyflow/react` (React Flow) |
+| **Forms & validation** | `react-hook-form` + `@hookform/resolvers` + `zod` |
+| **Backend / DB** | **Supabase** — Postgres, Auth, Realtime subscriptions, Edge Functions (`@supabase/supabase-js`) |
+| **LLM calls** | Made from Supabase Edge Functions to an LLM API (orchestration + agent reasoning) |
+| **Package manager** | Bun (`bun.lock`, `bunfig.toml`) |
+| **Tooling** | TypeScript, ESLint (+ `typescript-eslint`, `eslint-plugin-react-hooks`), Prettier |
+| **Deployment / dev loop** | Lovable (auto-synced to this GitHub repo on every change) |
+
+---
+
+## Data Model (Supabase Postgres)
+
+| Table | Purpose |
+|---|---|
+| `students` | id, name, branch, year, cgpa, attendance_pct |
+| `courses` | id, name, faculty, timetable_slot, student_id (fk) |
+| `placements` | id, company, eligibility_rules (jsonb: min_cgpa, branch, max_backlogs), open_roles |
+| `events` | id, title, date, capacity, registered_students (array) |
+| `policies` | id, title, content — source docs for RAG (attendance policy, exam regulations, hostel rules, scholarships) |
+| `chat_sessions` / `chat_messages` | standard per-student chat history |
+| `agent_logs` | session_id, sender_agent, receiver_agent, intent, payload (jsonb), timestamp — powers the Live Agent Graph and Admin/Debug view |
+| `pending_approvals` | session_id, action_type, action_payload, status (pending / approved / denied) |
+
+Seeded with 3–4 mock students, 5–6 courses, 2–3 placement drives with different eligibility rules, 3–4 upcoming events, and 4 short policy documents.
+
+---
+
+## Agents Used
+
+| Agent | Role | Reads / Writes |
+|---|---|---|
+| **Orchestrator Agent** | Converts the user's request + student context into an ordered JSON plan (`{agent, action, params}`), delegates to specialists, and logs every step in real time. | Writes `agent_logs` |
+| **Academic Agent** | Answers timetable, attendance, and exam questions for the student. | Reads `courses`, `students` |
+| **Placement Agent** | Multi-step eligibility reasoning — checks CGPA, then branch, then backlogs against a drive's rules, and explains which check passed or failed. | Reads `placements`, `students` |
+| **Knowledge Agent (RAG)** | Similarity/keyword search over policy documents; answers with a cited source. | Reads `policies` |
+| **Communication & Action Agent** | Drafts the exact email / registration / calendar action but never executes it directly — writes it as a pending action for approval. | Reads context, writes `pending_approvals` |
+| **Sentinel Agent** | Scheduled (cron) Edge Function that scans for threshold breaches (e.g. attendance < 75%) and proactively inserts a chat message. | Reads `students`/`courses`, writes `chat_messages` |
+
+---
+
+## Future Scope
+
+- **Real institutional integrations** — replace mock data with live connections to the college ERP, LMS (e.g. Moodle/Google Classroom), and official placement cell systems instead of seeded Supabase tables.
+- **Real email/calendar execution** — wire the Communication & Action Agent to actual providers (Gmail/Outlook API, Google Calendar) once approved, rather than simulating the write.
+- **Voice interface** — allow students to speak requests, useful for accessibility and quick on-the-go queries between classes.
+- **Expanded agent roster** — add a Hostel/Facilities Agent, a Finance/Scholarship Agent, and a Wellness Agent (e.g. proactively checking in during high-stress periods like exams).
+- **Cross-student/faculty view** — a faculty-facing dashboard so advisors can see (with consent) Sentinel-flagged students and approve interventions.
+- **Smarter memory** — move from simple stored facts to a proper long-term vector memory so NEXUS's "remembers" list gets richer and more personalized over multiple semesters, not just recent sessions.
+- **Fine-grained approval policies** — let students pre-approve certain low-risk action categories (e.g. "always auto-register me for free workshops in my branch") while keeping high-stakes actions (emails to faculty, paid registrations) gated.
+- **Multi-tenant deployment** — generalize the schema so any college can spin up its own instance with its own courses, policies, and eligibility rules.
+- **Analytics dashboard** — aggregate (anonymized) Sentinel triggers and agent usage to help administration spot systemic issues (e.g. a course with widespread attendance drops).
