@@ -29,14 +29,18 @@ import {
   type Student,
 } from "@/lib/nexus";
 import {
+  createMyProfile,
   decideApproval,
+  fetchMyProfile,
   fetchSessionState,
   fetchWorkspace,
   runOrchestrator,
   triggerSentinel,
 } from "@/lib/nexus.functions";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/workspace")({
+export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
       { title: "NEXUS Workspace — Live Multi-Agent Campus Console" },
@@ -66,6 +70,7 @@ type Course = {
 function Workspace() {
   const navigate = useNavigate();
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [needsProfile, setNeedsProfile] = useState(false);
   const [student, setStudent] = useState<Student | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [events, setEvents] = useState<{ title: string; date: string }[]>([]);
@@ -79,27 +84,22 @@ function Workspace() {
   const [rightTab, setRightTab] = useState<"trace" | "debug">("trace");
   const [showMemory, setShowMemory] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    const id = localStorage.getItem("nexus_student_id");
-    if (!id) {
-      navigate({ to: "/" });
-      return;
-    }
-    setStudentId(id);
-  }, [navigate]);
-
-  useEffect(() => {
-    if (!studentId) return;
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchWorkspace({ data: { studentId } });
+        const { studentId: id } = await fetchMyProfile();
         if (cancelled) return;
-        if (!data.student) {
-          navigate({ to: "/" });
+        if (!id) {
+          setNeedsProfile(true);
           return;
         }
+        setNeedsProfile(false);
+        setStudentId(id);
+        const data = await fetchWorkspace();
+        if (cancelled || !data.student) return;
         setStudent(data.student as Student);
         setCourses(data.courses as Course[]);
         setEvents(data.events);
@@ -115,7 +115,8 @@ function Workspace() {
     return () => {
       cancelled = true;
     };
-  }, [studentId, navigate]);
+  }, [reload]);
+
 
   // Campus tables are server-only, so we poll a trusted server function
   // instead of subscribing to the database from the browser.
@@ -245,7 +246,7 @@ function Workspace() {
       ]);
       try {
         const res = await runOrchestrator({
-          data: { sessionId, studentId, message: text, language },
+          data: { sessionId, message: text, language },
         });
         if (!res.ok && res.error) toast.error("An agent failed", { description: res.error });
       } catch (err) {
@@ -273,7 +274,7 @@ function Workspace() {
   const sentinelScan = async () => {
     if (!studentId) return;
     try {
-      const res = await triggerSentinel({ data: { studentId } });
+      const res = await triggerSentinel();
       if (res.alerts.length === 0) toast("Sentinel scan complete — no threshold breaches found.");
     } catch {
       toast.error("Sentinel Agent could not run its scan right now.");
@@ -292,6 +293,10 @@ function Workspace() {
         </div>
       </div>
     );
+  }
+
+  if (needsProfile) {
+    return <Onboarding onDone={() => setReload((n) => n + 1)} />;
   }
 
   if (!student || !sessionId) {
@@ -362,9 +367,10 @@ function Workspace() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
-              localStorage.removeItem("nexus_student_id");
-              navigate({ to: "/" });
+            title="Sign out"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/auth", replace: true });
             }}
           >
             <LogOut className="size-4" />
@@ -460,5 +466,58 @@ function TabButton({
     >
       {children}
     </button>
+  );
+}
+
+function Onboarding({ onDone }: { onDone: () => void }) {
+  const [name, setName] = useState("");
+  const [branch, setBranch] = useState("CSE");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim().length < 2) return;
+    setBusy(true);
+    try {
+      await createMyProfile({ data: { name: name.trim(), branch } });
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create your profile.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main className="grid-bg grid min-h-screen place-items-center px-6">
+      <form onSubmit={submit} className="panel w-full max-w-sm p-6">
+        <h1 className="text-lg font-semibold tracking-tight">Set up your campus profile</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          This profile is private to your account and powers every agent.
+        </p>
+        <div className="mt-5 space-y-3">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your full name"
+            className="bg-surface-2"
+          />
+          <select
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+            className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm"
+          >
+            {["CSE", "ECE", "EEE", "MECH", "CIVIL", "IT"].map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" className="w-full" disabled={busy || name.trim().length < 2}>
+            Create profile
+          </Button>
+        </div>
+      </form>
+    </main>
   );
 }
