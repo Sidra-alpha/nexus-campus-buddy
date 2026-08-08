@@ -2,7 +2,7 @@
 
 **NEXUS is not a chatbot.** It's a multi-agent orchestration platform where specialized AI agents plan, collaborate, and take real actions on a student's behalf — registering for events, sending emails, updating calendars — with a human approval step before anything irreversible happens.
 
-🔗 **Live app:**(https://id-preview--684f8585-e7fa-40bc-b5dc-2c10b14d7b3f.lovable.app/)
+🔗 **Live app:**(https://nexus-campus-buddy.lovable.app/)
 
 ---
 
