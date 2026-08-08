@@ -378,7 +378,7 @@ function Workspace() {
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)]">
+      <div className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)]">
         <section className="panel min-h-0 overflow-hidden">
           <ChatPanel
             messages={messages}
