@@ -66,6 +66,7 @@ type Course = {
 function Workspace() {
   const navigate = useNavigate();
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [needsProfile, setNeedsProfile] = useState(false);
   const [student, setStudent] = useState<Student | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [events, setEvents] = useState<{ title: string; date: string }[]>([]);
@@ -79,27 +80,22 @@ function Workspace() {
   const [rightTab, setRightTab] = useState<"trace" | "debug">("trace");
   const [showMemory, setShowMemory] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    const id = localStorage.getItem("nexus_student_id");
-    if (!id) {
-      navigate({ to: "/" });
-      return;
-    }
-    setStudentId(id);
-  }, [navigate]);
-
-  useEffect(() => {
-    if (!studentId) return;
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchWorkspace({ data: { studentId } });
+        const { studentId: id } = await fetchMyProfile();
         if (cancelled) return;
-        if (!data.student) {
-          navigate({ to: "/" });
+        if (!id) {
+          setNeedsProfile(true);
           return;
         }
+        setNeedsProfile(false);
+        setStudentId(id);
+        const data = await fetchWorkspace();
+        if (cancelled || !data.student) return;
         setStudent(data.student as Student);
         setCourses(data.courses as Course[]);
         setEvents(data.events);
@@ -115,7 +111,8 @@ function Workspace() {
     return () => {
       cancelled = true;
     };
-  }, [studentId, navigate]);
+  }, [reload]);
+
 
   // Campus tables are server-only, so we poll a trusted server function
   // instead of subscribing to the database from the browser.
