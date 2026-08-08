@@ -2,10 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Network, Plus, ShieldCheck, Radar, Workflow } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Student } from "@/lib/nexus";
+import { addStudent, fetchStudents } from "@/lib/nexus.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
