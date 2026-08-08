@@ -1,10 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Network, Plus, ShieldCheck, Radar, Workflow } from "lucide-react";
+import { ArrowRight, Network, ShieldCheck, Radar, Workflow, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { addStudent, fetchStudents } from "@/lib/nexus.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,38 +26,15 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const navigate = useNavigate();
-  const [newName, setNewName] = useState("");
-  const [branch, setBranch] = useState("CSE");
-  const [creating, setCreating] = useState(false);
-
-  const { data: students, refetch } = useQuery({
-    queryKey: ["students"],
-    queryFn: () => fetchStudents(),
-  });
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    localStorage.removeItem("nexus_student_id");
+    void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
+      setSignedIn(!!session),
+    );
+    return () => sub.subscription.unsubscribe();
   }, []);
-
-  const pick = (id: string) => {
-    localStorage.setItem("nexus_student_id", id);
-    navigate({ to: "/workspace" });
-  };
-
-  const create = async () => {
-    if (!newName.trim()) return;
-    setCreating(true);
-    try {
-      const created = await addStudent({ data: { name: newName.trim(), branch } });
-      await refetch();
-      pick(created.id);
-    } catch {
-      // creation failed; leave the form as-is
-    } finally {
-      setCreating(false);
-    }
-  };
-
 
   return (
     <main className="grid-bg min-h-screen">
@@ -87,68 +62,32 @@ function Landing() {
 
         <section className="panel p-6">
           <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
-            Choose your profile
+            {signedIn ? "Welcome back" : "Sign in to continue"}
           </h2>
-          <div className="mt-4 space-y-2">
-            {(students ?? []).map((s) => (
-              <button
-                key={s.id}
-                onClick={() => pick(s.id)}
-                className="group flex w-full items-center gap-3 rounded-xl border border-border bg-surface-2 px-3 py-3 text-left transition-colors hover:border-primary"
-              >
-                <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-sm font-semibold text-primary">
-                  {s.name
-                    .split(" ")
-                    .map((p: string) => p[0])
-                    .join("")
-                    .slice(0, 2)}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{s.name}</span>
-                  <span className="block text-[11px] text-muted-foreground">
-                    {s.branch} · Year {s.year} · CGPA {Number(s.cgpa).toFixed(2)} ·{" "}
-                    {Number(s.attendance_pct).toFixed(0)}% attendance
-                  </span>
-                </span>
-                <ArrowRight className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
-              </button>
-            ))}
-            {!students && (
-              <div className="space-y-2">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-[58px] animate-pulse rounded-xl bg-surface-2" />
-                ))}
-              </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {signedIn
+              ? "Your private campus workspace is ready."
+              : "Your campus profile, chats and approvals are private to your account. Sign in with email and password, or continue with Google."}
+          </p>
+          <Button
+            className="mt-5 w-full"
+            onClick={() => navigate({ to: signedIn ? "/workspace" : "/auth" })}
+          >
+            {signedIn ? (
+              <>
+                Open workspace <ArrowRight className="size-4" />
+              </>
+            ) : (
+              <>
+                <LogIn className="size-4" /> Sign in or create account
+              </>
             )}
-          </div>
-
-          <div className="mt-5 border-t border-border pt-4">
-            <p className="text-[11px] tracking-wider text-muted-foreground uppercase">
-              Or create a profile
+          </Button>
+          {signedIn === false && (
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              New here? Creating an account also creates your campus profile.
             </p>
-            <div className="mt-2 flex gap-2">
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Your name"
-                className="bg-surface-2"
-              />
-              <select
-                value={branch}
-                onChange={(e) => setBranch(e.target.value)}
-                className="rounded-md border border-border bg-surface-2 px-2 text-sm"
-              >
-                {["CSE", "ECE", "MECH", "CIVIL"].map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-              <Button onClick={create} disabled={creating || !newName.trim()} size="icon">
-                <Plus className="size-4" />
-              </Button>
-            </div>
-          </div>
+          )}
         </section>
       </div>
     </main>

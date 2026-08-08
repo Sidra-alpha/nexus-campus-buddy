@@ -36,7 +36,7 @@ import {
   triggerSentinel,
 } from "@/lib/nexus.functions";
 
-export const Route = createFileRoute("/workspace")({
+export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
       { title: "NEXUS Workspace — Live Multi-Agent Campus Console" },
