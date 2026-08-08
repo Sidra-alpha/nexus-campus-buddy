@@ -14,17 +14,29 @@ async function db() {
 
 const BRANCHES = ["CSE", "ECE", "EEE", "MECH", "CIVIL", "IT"];
 
-export async function listStudents() {
+export async function getStudentIdForUser(userId: string) {
   const supabase = await db();
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("students")
-    .select("id,name,branch,year,cgpa,attendance_pct,backlogs")
-    .order("created_at");
-  if (error) throw new Error("Could not load campus profiles.");
-  return (data ?? []) as Omit<Student, "email">[];
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data?.id ?? null;
 }
 
-export async function createStudent(input: { name: string; branch: string }) {
+export async function requireStudentIdForUser(userId: string) {
+  const id = await getStudentIdForUser(userId);
+  if (!id) throw new Error("No campus profile exists for this account yet.");
+  return id;
+}
+
+export async function createStudentForUser(
+  userId: string,
+  input: { name: string; branch: string; email: string | null },
+) {
+  const existing = await getStudentIdForUser(userId);
+  if (existing) return { id: existing };
+
   const name = input.name.trim().slice(0, 60);
   if (name.length < 2 || !/^[\p{L}\p{M}.'\- ]+$/u.test(name)) {
     throw new Error("Please enter a valid name.");
@@ -40,13 +52,35 @@ export async function createStudent(input: { name: string; branch: string }) {
       cgpa: 8.0,
       attendance_pct: 82,
       backlogs: 0,
-      email: `${name.toLowerCase().replace(/[^a-z]+/g, ".")}@campus.edu`,
+      user_id: userId,
+      email: input.email ?? `${name.toLowerCase().replace(/[^a-z]+/g, ".")}@campus.edu`,
     })
     .select("id")
     .single();
   if (error || !data) throw new Error("Could not create the profile.");
   return { id: data.id };
 }
+
+export async function assertSessionOwned(sessionId: string, studentId: string) {
+  const supabase = await db();
+  const { data } = await supabase
+    .from("chat_sessions")
+    .select("student_id")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (!data || data.student_id !== studentId) throw new Error("Session not found.");
+}
+
+export async function assertApprovalOwned(approvalId: string, studentId: string) {
+  const supabase = await db();
+  const { data } = await supabase
+    .from("pending_approvals")
+    .select("student_id")
+    .eq("id", approvalId)
+    .maybeSingle();
+  if (!data || data.student_id !== studentId) throw new Error("Approval not found.");
+}
+
 
 export async function loadSessionState(sessionId: string) {
   const supabase = await db();
