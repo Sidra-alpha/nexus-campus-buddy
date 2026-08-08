@@ -324,7 +324,12 @@ Use short markdown: bold key facts, bullet lists, no headings larger than ###.
 Explain eligibility rule-by-rule when placement data is present (which rule passed/failed).
 When policy excerpts are used, cite them inline like "(Source: Attendance Policy §1)".
 If an action is awaiting approval, say clearly that it is waiting for the student's confirmation and nothing has been done yet.
-Be concise: under 180 words.`,
+Be concise: under 180 words.
+Always finish with a "**Learn more**" line followed by 2-3 markdown bullet links that help the student go deeper on the topic:
+- one YouTube search link: [Watch: <topic>](https://www.youtube.com/results?search_query=<url-encoded+topic>)
+- one Google search link: [Search: <topic>](https://www.google.com/search?q=<url-encoded+topic>)
+- optionally one more specific YouTube/Google link for a sub-topic.
+Use real URL-encoded query strings and make the topic specific to the student's request.`,
       },
       {
         role: "user",
