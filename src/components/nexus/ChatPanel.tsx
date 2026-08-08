@@ -52,6 +52,24 @@ const STARTERS = [
   "Show my timetable and lowest attendance course.",
 ];
 
+const FOLLOWUP_RE = /<!--\s*followups:([\s\S]*?)-->/i;
+
+/** Removes the hidden follow-up marker from rendered text. */
+export function stripFollowUps(text: string): string {
+  return text.replace(FOLLOWUP_RE, "").trimEnd();
+}
+
+/** Reads the agent-authored follow-ups tailored to the student's own request. */
+function agentFollowUps(text: string): string[] {
+  const m = text.match(FOLLOWUP_RE);
+  if (!m) return [];
+  return (m[1] ?? "")
+    .split("|")
+    .map((s) => s.replace(/^[-*\s]+/, "").trim())
+    .filter((s) => s.length > 2)
+    .slice(0, 3);
+}
+
 /** Derives contextual follow-up prompts from the assistant's latest reply. */
 function followUpsFor(text: string): string[] {
   const t = text.toLowerCase();
@@ -92,7 +110,10 @@ function Bubble({ message, isLatest }: { message: ChatMessage; isLatest: boolean
   const [openCite, setOpenCite] = useState(false);
   const agent = (message.agent ?? "orchestrator") as AgentKey;
   const meta = AGENT_META[agent] ?? AGENT_META.orchestrator;
-  const body = useTypewriter(message.content, isLatest && message.role === "assistant");
+  const body = useTypewriter(
+    stripFollowUps(message.content),
+    isLatest && message.role === "assistant",
+  );
 
   if (message.role === "user") {
     return (
@@ -193,7 +214,12 @@ export function ChatPanel({
 
   const last = messages[messages.length - 1];
   const followUps = useMemo(
-    () => (!running && last && last.role === "assistant" ? followUpsFor(last.content) : []),
+    () =>
+      !running && last && last.role === "assistant"
+        ? (agentFollowUps(last.content).length > 0
+            ? agentFollowUps(last.content)
+            : followUpsFor(last.content))
+        : [],
     [running, last],
   );
 
