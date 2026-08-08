@@ -158,3 +158,98 @@
   stroke-dasharray: 6 6;
   animation: nexus-dash 0.6s linear infinite;
 }
+
+@keyframes nexus-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(1.5deg);
+  }
+}
+
+@keyframes nexus-orbit {
+  from {
+    transform: rotate(0deg) translateX(var(--orbit-r, 120px)) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(var(--orbit-r, 120px)) rotate(-360deg);
+  }
+}
+
+@keyframes nexus-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes nexus-shimmer {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes nexus-grid-drift {
+  to {
+    background-position: 34px 34px;
+  }
+}
+
+.float-slow {
+  animation: nexus-float 7s ease-in-out infinite;
+}
+.float-slower {
+  animation: nexus-float 11s ease-in-out infinite;
+}
+
+.orbit {
+  animation: nexus-orbit var(--orbit-d, 18s) linear infinite;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: nexus-marquee 26s linear infinite;
+}
+
+.grid-bg-live {
+  animation: nexus-grid-drift 6s linear infinite;
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--foreground),
+    var(--primary),
+    var(--agent-academic),
+    var(--foreground)
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: nexus-shimmer 6s linear infinite;
+}
+
+.reveal {
+  animation: nexus-rise 0.7s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-slow,
+  .float-slower,
+  .orbit,
+  .marquee-track,
+  .grid-bg-live,
+  .shimmer-text,
+  .reveal {
+    animation: none !important;
+  }
+}
