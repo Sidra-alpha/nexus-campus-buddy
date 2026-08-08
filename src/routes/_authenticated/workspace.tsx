@@ -367,9 +367,10 @@ function Workspace() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
-              localStorage.removeItem("nexus_student_id");
-              navigate({ to: "/" });
+            title="Sign out"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/auth", replace: true });
             }}
           >
             <LogOut className="size-4" />
