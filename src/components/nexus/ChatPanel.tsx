@@ -214,7 +214,12 @@ export function ChatPanel({
 
   const last = messages[messages.length - 1];
   const followUps = useMemo(
-    () => (!running && last && last.role === "assistant" ? followUpsFor(last.content) : []),
+    () =>
+      !running && last && last.role === "assistant"
+        ? (agentFollowUps(last.content).length > 0
+            ? agentFollowUps(last.content)
+            : followUpsFor(last.content))
+        : [],
     [running, last],
   );
 
