@@ -31,8 +31,17 @@ function useTypewriter(text: string, enabled: boolean) {
 
 function Markdown({ children }: { children: string }) {
   return (
-    <div className="space-y-2 text-[15px] leading-7 [&_a]:text-primary [&_code]:rounded [&_code]:bg-surface-2 [&_code]:px-1 [&_li]:ml-4 [&_li]:list-disc [&_strong]:text-foreground [&_strong]:font-semibold">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
+    <div className="space-y-2 text-[15px] leading-7 [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_code]:rounded [&_code]:bg-surface-2 [&_code]:px-1 [&_li]:ml-4 [&_li]:list-disc [&_strong]:text-foreground [&_strong]:font-semibold">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          a: ({ node: _node, ...props }) => (
+            <a {...props} target="_blank" rel="noopener noreferrer" />
+          ),
+        }}
+      >
+        {children}
+      </ReactMarkdown>
     </div>
   );
 }
