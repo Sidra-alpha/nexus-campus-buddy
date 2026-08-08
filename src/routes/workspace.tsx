@@ -10,7 +10,6 @@ import {
   Terminal,
   User as UserIcon,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { AgentGraph } from "@/components/nexus/AgentGraph";
 import { ChatPanel } from "@/components/nexus/ChatPanel";
@@ -29,7 +28,13 @@ import {
   type PlanStep,
   type Student,
 } from "@/lib/nexus";
-import { decideApproval, runOrchestrator, triggerSentinel } from "@/lib/nexus.functions";
+import {
+  decideApproval,
+  fetchSessionState,
+  fetchWorkspace,
+  runOrchestrator,
+  triggerSentinel,
+} from "@/lib/nexus.functions";
 
 export const Route = createFileRoute("/workspace")({
   head: () => ({
@@ -89,59 +94,20 @@ function Workspace() {
     let cancelled = false;
     (async () => {
       try {
-        const [s, c, ev, mem] = await Promise.all([
-          supabase.from("students").select("*").eq("id", studentId).maybeSingle(),
-          supabase.from("courses").select("*").eq("student_id", studentId),
-          supabase.from("events").select("title,date").order("date").limit(5),
-          supabase.from("student_memory").select("fact").eq("student_id", studentId),
-        ]);
+        const data = await fetchWorkspace({ data: { studentId } });
         if (cancelled) return;
-        if (!s.data) {
+        if (!data.student) {
           navigate({ to: "/" });
           return;
         }
-        setStudent(s.data as Student);
-        setCourses((c.data ?? []) as Course[]);
-        setEvents((ev.data ?? []) as { title: string; date: string }[]);
-        setFacts((mem.data ?? []).map((m) => m.fact));
-
-        const { data: existing } = await supabase
-          .from("chat_sessions")
-          .select("id")
-          .eq("student_id", studentId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        let sid = existing?.id ?? null;
-        if (!sid) {
-          const { data: created } = await supabase
-            .from("chat_sessions")
-            .insert({ student_id: studentId, title: "Campus session" })
-            .select("id")
-            .single();
-          sid = created?.id ?? null;
-        }
-        if (cancelled || !sid) return;
-        setSessionId(sid);
-
-        const [msgs, lgs, aps] = await Promise.all([
-          supabase
-            .from("chat_messages")
-            .select("*")
-            .eq("session_id", sid)
-            .order("created_at"),
-          supabase.from("agent_logs").select("*").eq("session_id", sid).order("created_at"),
-          supabase
-            .from("pending_approvals")
-            .select("*")
-            .eq("session_id", sid)
-            .order("created_at"),
-        ]);
-        if (cancelled) return;
-        setMessages((msgs.data ?? []) as unknown as ChatMessage[]);
-        setLogs((lgs.data ?? []) as unknown as AgentLog[]);
-        setApprovals((aps.data ?? []) as unknown as PendingApproval[]);
+        setStudent(data.student as Student);
+        setCourses(data.courses as Course[]);
+        setEvents(data.events);
+        setFacts(data.facts);
+        setSessionId(data.sessionId);
+        setMessages(data.messages as unknown as ChatMessage[]);
+        setLogs(data.logs as unknown as AgentLog[]);
+        setApprovals(data.approvals as unknown as PendingApproval[]);
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : "Could not reach the campus database.");
       }
@@ -151,53 +117,63 @@ function Workspace() {
     };
   }, [studentId, navigate]);
 
+  // Campus tables are server-only, so we poll a trusted server function
+  // instead of subscribing to the database from the browser.
   useEffect(() => {
     if (!sessionId) return;
-    const channel = supabase
-      .channel(`nexus-${sessionId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `session_id=eq.${sessionId}` },
-        (payload) => {
-          const row = payload.new as unknown as ChatMessage;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === row.id)) return prev;
-            const withoutOptimistic = prev.filter(
-              (m) => !(m.id.startsWith("optimistic-") && m.content === row.content),
-            );
-            return [...withoutOptimistic, row];
-          });
-          if (row.proactive) {
+    let cancelled = false;
+    let inFlight = false;
+
+    const tick = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const state = await fetchSessionState({ data: { sessionId } });
+        if (cancelled) return;
+        const incoming = state.messages as unknown as ChatMessage[];
+        setMessages((prev) => {
+          const optimistic = prev.filter(
+            (m) => m.id.startsWith("optimistic-") && !incoming.some((r) => r.content === m.content),
+          );
+          const next = [...incoming, ...optimistic];
+          if (next.length === prev.length && next.every((m, i) => prev[i]?.id === m.id)) return prev;
+          const fresh = incoming.filter((m) => !prev.some((p) => p.id === m.id));
+          const proactive = fresh.find((m) => m.proactive);
+          if (proactive) {
             toast("NEXUS noticed something", {
-              description: row.content.replace(/\*\*/g, "").slice(0, 120),
+              description: proactive.content.replace(/\*\*/g, "").slice(0, 120),
             });
           }
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "agent_logs", filter: `session_id=eq.${sessionId}` },
-        (payload) => {
-          const row = payload.new as unknown as AgentLog;
-          setLogs((prev) => (prev.some((l) => l.id === row.id) ? prev : [...prev, row]));
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "pending_approvals", filter: `session_id=eq.${sessionId}` },
-        (payload) => {
-          const row = payload.new as unknown as PendingApproval;
-          setApprovals((prev) => {
-            const rest = prev.filter((a) => a.id !== row.id);
-            return [...rest, row];
-          });
-        },
-      )
-      .subscribe();
+          return next;
+        });
+        setLogs((prev) => {
+          const next = state.logs as unknown as AgentLog[];
+          return next.length === prev.length && next.every((l, i) => prev[i]?.id === l.id)
+            ? prev
+            : next;
+        });
+        setApprovals((prev) => {
+          const next = state.approvals as unknown as PendingApproval[];
+          return next.length === prev.length &&
+            next.every((a, i) => prev[i]?.id === a.id && prev[i]?.status === a.status)
+            ? prev
+            : next;
+        });
+      } catch {
+        // transient network issue; the next tick retries
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const interval = setInterval(tick, 1500);
+    void tick();
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      clearInterval(interval);
     };
   }, [sessionId]);
+
 
   const currentTurnId = useMemo(() => {
     for (let i = logs.length - 1; i >= 0; i--) {

@@ -1,0 +1,43 @@
+DROP POLICY IF EXISTS "demo open agent_logs" ON public.agent_logs;
+DROP POLICY IF EXISTS "demo open chat_messages" ON public.chat_messages;
+DROP POLICY IF EXISTS "demo open chat_sessions" ON public.chat_sessions;
+DROP POLICY IF EXISTS "demo open courses" ON public.courses;
+DROP POLICY IF EXISTS "demo open events" ON public.events;
+DROP POLICY IF EXISTS "demo open pending_approvals" ON public.pending_approvals;
+DROP POLICY IF EXISTS "demo open placements" ON public.placements;
+DROP POLICY IF EXISTS "demo open policies" ON public.policies;
+DROP POLICY IF EXISTS "demo open student_memory" ON public.student_memory;
+DROP POLICY IF EXISTS "demo open students" ON public.students;
+
+ALTER TABLE public.agent_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pending_approvals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.placements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.policies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_memory ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON public.agent_logs FROM anon, authenticated;
+REVOKE ALL ON public.chat_messages FROM anon, authenticated;
+REVOKE ALL ON public.chat_sessions FROM anon, authenticated;
+REVOKE ALL ON public.courses FROM anon, authenticated;
+REVOKE ALL ON public.events FROM anon, authenticated;
+REVOKE ALL ON public.pending_approvals FROM anon, authenticated;
+REVOKE ALL ON public.placements FROM anon, authenticated;
+REVOKE ALL ON public.policies FROM anon, authenticated;
+REVOKE ALL ON public.student_memory FROM anon, authenticated;
+REVOKE ALL ON public.students FROM anon, authenticated;
+
+GRANT ALL ON public.agent_logs TO service_role;
+GRANT ALL ON public.chat_messages TO service_role;
+GRANT ALL ON public.chat_sessions TO service_role;
+GRANT ALL ON public.courses TO service_role;
+GRANT ALL ON public.events TO service_role;
+GRANT ALL ON public.pending_approvals TO service_role;
+GRANT ALL ON public.placements TO service_role;
+GRANT ALL ON public.policies TO service_role;
+GRANT ALL ON public.student_memory TO service_role;
+GRANT ALL ON public.students TO service_role;
