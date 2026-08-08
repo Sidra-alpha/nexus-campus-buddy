@@ -85,7 +85,7 @@ function Landing() {
   return (
     <main className="grid-bg grid-bg-live min-h-dvh overflow-hidden lg:h-dvh">
       <div className="mx-auto grid h-full max-w-6xl content-center gap-6 px-6 py-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8 lg:py-6">
-        <section className="reveal">
+        <section className="reveal min-w-0">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-[11px] tracking-wider text-primary uppercase">
             <Network className="size-3.5 animate-pulse" /> Multi-agent orchestration
           </div>
@@ -124,7 +124,7 @@ function Landing() {
           </div>
         </section>
 
-        <section className="reveal flex flex-col gap-4">
+        <section className="reveal flex min-w-0 flex-col gap-4">
           <div className="panel relative aspect-square max-h-[42dvh] min-h-[220px] overflow-hidden lg:mx-auto lg:aspect-auto lg:h-[42dvh] lg:w-full">
             <img
               src={heroImage}
