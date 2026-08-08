@@ -34,14 +34,7 @@ function Landing() {
 
   const { data: students, refetch } = useQuery({
     queryKey: ["students"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("students")
-        .select("*")
-        .order("created_at");
-      if (error) throw error;
-      return data as Student[];
-    },
+    queryFn: () => fetchStudents(),
   });
 
   useEffect(() => {
@@ -56,25 +49,17 @@ function Landing() {
   const create = async () => {
     if (!newName.trim()) return;
     setCreating(true);
-    const { data, error } = await supabase
-      .from("students")
-      .insert({
-        name: newName.trim(),
-        branch,
-        year: 3,
-        cgpa: 8.0,
-        attendance_pct: 82,
-        backlogs: 0,
-        email: `${newName.trim().toLowerCase().replace(/\s+/g, ".")}@campus.edu`,
-      })
-      .select()
-      .single();
-    setCreating(false);
-    if (!error && data) {
+    try {
+      const created = await addStudent({ data: { name: newName.trim(), branch } });
       await refetch();
-      pick(data.id);
+      pick(created.id);
+    } catch {
+      // creation failed; leave the form as-is
+    } finally {
+      setCreating(false);
     }
   };
+
 
   return (
     <main className="grid-bg min-h-screen">
