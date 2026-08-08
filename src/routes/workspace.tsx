@@ -10,7 +10,6 @@ import {
   Terminal,
   User as UserIcon,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { AgentGraph } from "@/components/nexus/AgentGraph";
 import { ChatPanel } from "@/components/nexus/ChatPanel";
@@ -29,7 +28,13 @@ import {
   type PlanStep,
   type Student,
 } from "@/lib/nexus";
-import { decideApproval, runOrchestrator, triggerSentinel } from "@/lib/nexus.functions";
+import {
+  decideApproval,
+  fetchSessionState,
+  fetchWorkspace,
+  runOrchestrator,
+  triggerSentinel,
+} from "@/lib/nexus.functions";
 
 export const Route = createFileRoute("/workspace")({
   head: () => ({
