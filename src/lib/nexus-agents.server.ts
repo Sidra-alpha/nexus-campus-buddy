@@ -329,7 +329,9 @@ Always finish with a "**Learn more**" line followed by 2-3 markdown bullet links
 - one YouTube search link: [Watch: <topic>](https://www.youtube.com/results?search_query=<url-encoded+topic>)
 - one Google search link: [Search: <topic>](https://www.google.com/search?q=<url-encoded+topic>)
 - optionally one more specific YouTube/Google link for a sub-topic.
-Use real URL-encoded query strings and make the topic specific to the student's request.`,
+Use real URL-encoded query strings and make the topic specific to the student's request.
+After that, on the VERY LAST line, output exactly one HTML comment with 3 short follow-up questions the student would naturally ask NEXT about THEIR specific request (reference their actual course/company/event/date, never generic filler), written in first person, max 12 words each, separated by " | ":
+<!--followups: question one | question two | question three-->`,
       },
       {
         role: "user",
