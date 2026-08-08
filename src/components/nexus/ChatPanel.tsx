@@ -63,7 +63,7 @@ export function stripFollowUps(text: string): string {
 function agentFollowUps(text: string): string[] {
   const m = text.match(FOLLOWUP_RE);
   if (!m) return [];
-  return m[1]
+  return (m[1] ?? "")
     .split("|")
     .map((s) => s.replace(/^[-*\s]+/, "").trim())
     .filter((s) => s.length > 2)
