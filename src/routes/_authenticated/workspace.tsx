@@ -29,12 +29,16 @@ import {
   type Student,
 } from "@/lib/nexus";
 import {
+  createMyProfile,
   decideApproval,
+  fetchMyProfile,
   fetchSessionState,
   fetchWorkspace,
   runOrchestrator,
   triggerSentinel,
 } from "@/lib/nexus.functions";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
@@ -242,7 +246,7 @@ function Workspace() {
       ]);
       try {
         const res = await runOrchestrator({
-          data: { sessionId, studentId, message: text, language },
+          data: { sessionId, message: text, language },
         });
         if (!res.ok && res.error) toast.error("An agent failed", { description: res.error });
       } catch (err) {
@@ -270,7 +274,7 @@ function Workspace() {
   const sentinelScan = async () => {
     if (!studentId) return;
     try {
-      const res = await triggerSentinel({ data: { studentId } });
+      const res = await triggerSentinel();
       if (res.alerts.length === 0) toast("Sentinel scan complete — no threshold breaches found.");
     } catch {
       toast.error("Sentinel Agent could not run its scan right now.");
@@ -289,6 +293,10 @@ function Workspace() {
         </div>
       </div>
     );
+  }
+
+  if (needsProfile) {
+    return <Onboarding onDone={() => setReload((n) => n + 1)} />;
   }
 
   if (!student || !sessionId) {
