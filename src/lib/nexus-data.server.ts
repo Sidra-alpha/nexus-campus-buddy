@@ -1,6 +1,11 @@
 // Server-only data access for NEXUS. All campus tables are locked down with RLS
 // and no public grants, so every read/write goes through this trusted module.
 import type { AgentLog, ChatMessage, PendingApproval, Student } from "./nexus";
+import type { Json } from "@/integrations/supabase/types";
+
+type SerializableLog = Omit<AgentLog, "payload"> & { payload: Json };
+type SerializableApproval = Omit<PendingApproval, "action_payload"> & { action_payload: Json };
+type SerializableMessage = Omit<ChatMessage, "citations"> & { citations: Json };
 
 async function db() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -51,9 +56,9 @@ export async function loadSessionState(sessionId: string) {
     supabase.from("pending_approvals").select("*").eq("session_id", sessionId).order("created_at"),
   ]);
   return {
-    messages: (msgs.data ?? []) as unknown as ChatMessage[],
-    logs: (lgs.data ?? []) as unknown as AgentLog[],
-    approvals: (aps.data ?? []) as unknown as PendingApproval[],
+    messages: (msgs.data ?? []) as unknown as SerializableMessage[],
+    logs: (lgs.data ?? []) as unknown as SerializableLog[],
+    approvals: (aps.data ?? []) as unknown as SerializableApproval[],
   };
 }
 
