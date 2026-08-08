@@ -110,7 +110,10 @@ function Bubble({ message, isLatest }: { message: ChatMessage; isLatest: boolean
   const [openCite, setOpenCite] = useState(false);
   const agent = (message.agent ?? "orchestrator") as AgentKey;
   const meta = AGENT_META[agent] ?? AGENT_META.orchestrator;
-  const body = useTypewriter(message.content, isLatest && message.role === "assistant");
+  const body = useTypewriter(
+    stripFollowUps(message.content),
+    isLatest && message.role === "assistant",
+  );
 
   if (message.role === "user") {
     return (
