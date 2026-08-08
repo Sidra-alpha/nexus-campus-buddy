@@ -89,8 +89,9 @@ function AuthPage() {
   };
 
   return (
-    <main className="grid-bg grid min-h-screen place-items-center px-6 py-14">
-      <div className="panel w-full max-w-sm p-6">
+    <main className="grid-bg grid min-h-dvh place-items-center overflow-y-auto px-6 py-8">
+      <div className="panel w-full max-w-sm p-5">
+
         <Link to="/" className="inline-flex items-center gap-2 text-primary">
           <Network className="size-4" />
           <span className="text-sm font-semibold tracking-tight">NEXUS</span>
