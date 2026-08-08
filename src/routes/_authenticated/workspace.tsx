@@ -468,3 +468,56 @@ function TabButton({
     </button>
   );
 }
+
+function Onboarding({ onDone }: { onDone: () => void }) {
+  const [name, setName] = useState("");
+  const [branch, setBranch] = useState("CSE");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim().length < 2) return;
+    setBusy(true);
+    try {
+      await createMyProfile({ data: { name: name.trim(), branch } });
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create your profile.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main className="grid-bg grid min-h-screen place-items-center px-6">
+      <form onSubmit={submit} className="panel w-full max-w-sm p-6">
+        <h1 className="text-lg font-semibold tracking-tight">Set up your campus profile</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          This profile is private to your account and powers every agent.
+        </p>
+        <div className="mt-5 space-y-3">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your full name"
+            className="bg-surface-2"
+          />
+          <select
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+            className="w-full rounded-md border border-border bg-surface-2 px-2 py-2 text-sm"
+          >
+            {["CSE", "ECE", "EEE", "MECH", "CIVIL", "IT"].map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" className="w-full" disabled={busy || name.trim().length < 2}>
+            Create profile
+          </Button>
+        </div>
+      </form>
+    </main>
+  );
+}
