@@ -83,37 +83,37 @@ function Landing() {
   }, []);
 
   return (
-    <main className="grid-bg grid-bg-live min-h-screen overflow-hidden">
-      <div className="mx-auto grid min-h-screen max-w-6xl gap-10 px-6 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-        <section className="reveal">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs tracking-wider text-primary uppercase">
-            <Network className="size-4 animate-pulse" /> Multi-agent orchestration
+    <main className="grid-bg grid-bg-live min-h-dvh overflow-hidden lg:h-dvh">
+      <div className="mx-auto grid h-full max-w-6xl content-center gap-6 px-6 py-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8 lg:py-6">
+        <section className="reveal min-w-0">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-[11px] tracking-wider text-primary uppercase">
+            <Network className="size-3.5 animate-pulse" /> Multi-agent orchestration
           </div>
-          <h1 className="mt-6 text-5xl leading-[1.05] font-semibold tracking-tight sm:text-6xl">
+          <h1 className="mt-4 text-3xl leading-[1.08] font-semibold tracking-tight sm:text-4xl xl:text-5xl">
             NEXUS runs your campus tasks
             <span className="shimmer-text"> with a team of agents.</span>
           </h1>
 
-          <div className="mt-5 h-8 overflow-hidden text-lg font-medium text-primary">
+          <div className="mt-3 h-7 overflow-hidden text-base font-medium text-primary">
             <span key={wordIndex} className="msg-rise inline-block">
               While you study, NEXUS {ROTATING[wordIndex]}
             </span>
           </div>
 
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
             Ask once. An Orchestrator writes a plan, delegates to the Academic, Placement,
             Knowledge and Communication agents, and shows every step live in a mission-control
             graph. Nothing irreversible happens without your explicit approval.
           </p>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <Feature icon={Workflow} title="Live agent graph" body="See collaboration as motion." />
             <Feature icon={ShieldCheck} title="Human in the loop" body="Approve every write." />
             <Feature icon={Radar} title="Sentinel alerts" body="Agents reach out first." />
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-full border border-border bg-surface py-2">
-            <div className="marquee-track gap-8 px-4 text-xs text-muted-foreground">
+          <div className="mt-5 overflow-hidden rounded-full border border-border bg-surface py-1.5">
+            <div className="marquee-track gap-8 px-4 text-[11px] text-muted-foreground">
               {[...TICKER, ...TICKER].map((t, i) => (
                 <span key={i} className="flex shrink-0 items-center gap-2 whitespace-nowrap">
                   <span className="size-1.5 rounded-full bg-primary" />
@@ -124,8 +124,8 @@ function Landing() {
           </div>
         </section>
 
-        <section className="reveal space-y-6">
-          <div className="panel relative aspect-square overflow-hidden">
+        <section className="reveal flex min-w-0 flex-col gap-4">
+          <div className="panel relative aspect-square max-h-[42dvh] min-h-[220px] overflow-hidden lg:mx-auto lg:aspect-auto lg:h-[42dvh] lg:w-full">
             <img
               src={heroImage}
               alt="Glowing network of connected AI agent nodes over a campus data grid"
@@ -137,8 +137,8 @@ function Landing() {
 
             <div className="absolute inset-0 grid place-items-center">
               <div className="relative grid size-0 place-items-center">
-                <div className="float-slow absolute grid size-24 place-items-center rounded-2xl border border-primary/50 bg-surface text-primary shadow-[var(--glow-primary)]">
-                  <Bot className="size-8" />
+                <div className="float-slow absolute grid size-16 place-items-center rounded-2xl border border-primary/50 bg-surface text-primary shadow-[var(--glow-primary)]">
+                  <Bot className="size-7" />
                 </div>
                 {ORBIT_AGENTS.map(({ icon: Icon, label, hue, d, r }) => (
                   <div
@@ -149,14 +149,14 @@ function Landing() {
                     }
                   >
                     <div
-                      className="flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold backdrop-blur"
+                      className="flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold backdrop-blur"
                       style={{
                         borderColor: `color-mix(in oklab, ${hue} 50%, transparent)`,
                         background: `color-mix(in oklab, ${hue} 14%, var(--surface))`,
                         color: hue,
                       }}
                     >
-                      <Icon className="size-3.5" />
+                      <Icon className="size-3" />
                       {label}
                     </div>
                   </div>
@@ -165,17 +165,17 @@ function Landing() {
             </div>
           </div>
 
-          <div className="panel p-6">
-            <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
+          <div className="panel p-4">
+            <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
               {signedIn ? "Welcome back" : "Sign in to continue"}
             </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
               {signedIn
                 ? "Your private campus workspace is ready."
                 : "Your campus profile, chats and approvals are private to your account. Sign in with email and password, or continue with Google."}
             </p>
             <Button
-              className="mt-5 w-full transition-transform hover:scale-[1.02]"
+              className="mt-3 w-full transition-transform hover:scale-[1.02]"
               onClick={() => navigate({ to: signedIn ? "/workspace" : "/auth" })}
             >
               {signedIn ? (
@@ -188,11 +188,6 @@ function Landing() {
                 </>
               )}
             </Button>
-            {signedIn === false && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                New here? Creating an account also creates your campus profile.
-              </p>
-            )}
           </div>
         </section>
       </div>
