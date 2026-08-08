@@ -52,6 +52,24 @@ const STARTERS = [
   "Show my timetable and lowest attendance course.",
 ];
 
+const FOLLOWUP_RE = /<!--\s*followups:([\s\S]*?)-->/i;
+
+/** Removes the hidden follow-up marker from rendered text. */
+export function stripFollowUps(text: string): string {
+  return text.replace(FOLLOWUP_RE, "").trimEnd();
+}
+
+/** Reads the agent-authored follow-ups tailored to the student's own request. */
+function agentFollowUps(text: string): string[] {
+  const m = text.match(FOLLOWUP_RE);
+  if (!m) return [];
+  return m[1]
+    .split("|")
+    .map((s) => s.replace(/^[-*\s]+/, "").trim())
+    .filter((s) => s.length > 2)
+    .slice(0, 3);
+}
+
 /** Derives contextual follow-up prompts from the assistant's latest reply. */
 function followUpsFor(text: string): string[] {
   const t = text.toLowerCase();
