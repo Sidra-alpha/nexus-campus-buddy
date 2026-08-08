@@ -99,7 +99,7 @@ function Landing() {
                 <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-sm font-semibold text-primary">
                   {s.name
                     .split(" ")
-                    .map((p) => p[0])
+                    .map((p: string) => p[0])
                     .join("")
                     .slice(0, 2)}
                 </span>
